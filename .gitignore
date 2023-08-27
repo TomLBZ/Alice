@@ -6,3 +6,9 @@ TestExecutables/C/CMakeFiles
 TestExecutables/C/cmake_install.cmake
 TestExecutables/C/Makefile
 TestExecutables/C/bin
+
+# For the directory TestExecutables/Typescript:
+# - ignores the node_modules directory
+# - ignores the dist directory
+TestExecutables/Typescript/node_modules
+TestExecutables/Typescript/dist
