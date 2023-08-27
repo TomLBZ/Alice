@@ -1,0 +1,8 @@
+# For the directory TestExecutables/C:
+# - ignores the CMake files
+# - ignores the binary files
+TestExecutables/C/CMakeCache.txt
+TestExecutables/C/CMakeFiles
+TestExecutables/C/cmake_install.cmake
+TestExecutables/C/Makefile
+TestExecutables/C/bin
