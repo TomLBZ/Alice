@@ -9,5 +9,7 @@ int main(int argc, char *argv[]) {
     printf("%s ", argv[i]);
   }
   printf("\n");
+  // print "-- Doll: echo.c: end of program --\n"
+  printf("-- Doll: echo.c: end of program --\n");
   return 0;
 }
