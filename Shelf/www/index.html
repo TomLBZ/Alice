@@ -1,30 +1,77 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Alice Shelf</title>
+    <title>Alice Panel</title>
     <link rel="stylesheet" type="text/css" href="css/style.css">
+    <script src="js/index.js"></script>
 </head>
 <body>
-    <div id="header">
-        <h1>Alice Shelf</h1>
-    </div>
-    <div id="content">
-        <div id="menu">
-            <ul>
-                <li><a href="index.php">Home</a></li>
-                <li><a href="upload.php">Upload</a></li>
-                <li><a href="download.php">Download</a></li>
-                <li><a href="search.php">Search</a></li>
-            </ul>
-        </div>
-        <div id="main">
-            <h2>Home</h2>
-            <p>Welcome to Alice Shelf!</p>
-            <p>Here you can upload and download files.</p>
-            <p>Enjoy!</p>
+    <div id="placeholder">
+        <div id="header">
+            <h1 class="animated7colors">Shelf of Dolls</h1>
         </div>
     </div>
+    <div id="buttons">
+        <span class="white">Node ID: <span class="white" id="nodeID"></span></span>
+        <button id="login" onclick="login()">Log In to This Node</button>
+
+    </div>
+    <!-- A Table with headers that shows a list of services -->
+    <table id="dolls">
+        <thead>
+            <tr>
+                <th>State</th>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Instances</th>
+                <th>Calls</th>
+                <th>Errors</th>
+                <th>Latency/ms</th>
+                <th>Ram/MB</th>
+                <th>Uptime</th>
+                <th>Endpoint</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="icon">
+                    <svg>
+                    <circle cx="10" cy="10" r="9" class="stopped" />
+                    </svg>
+                </td>
+                <td>0</td>
+                <td class="tooltip">Test
+                    <span class="tooltiptext">DESCRIPTION</span>
+                </td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td>0.00</td>
+                <td>0.00</td>
+                <td>0.00</td>
+                <td><a href=http://localhost:8080/echo>Echo</a></td>
+            </tr>
+            <tr>
+                <td class="icon">
+                    <svg>
+                    <circle cx="10" cy="10" r="9" class="running" />
+                    </svg>
+                </td>
+                <td>1</td>
+                <td class="tooltip">Echo
+                    <span class="tooltiptext">DESCRIPTION</span>
+                </td>
+                <td>1</td>
+                <td>0</td>
+                <td>0</td>
+                <td>0.00</td>
+                <td>0.00</td>
+                <td>0.00</td>
+                <td><a href=http://localhost:8080/echo>Echo</a></td>
+            </tr>
+    </table>
+    
     <div id="footer">
-        <p>&copy; 2016 Alice Shelf</p>
+        <p>&copy; 2023 Alice Panel by Li Bozhao @ WATT, all rights reserved.</p>
     </div>
 </html>
