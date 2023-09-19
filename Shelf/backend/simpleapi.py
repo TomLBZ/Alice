@@ -18,6 +18,11 @@ conn = psycopg2.connect(
 
 # http server
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
+    # disable CORS
+    def end_headers(self):
+        self.send_header('Access-Control-Allow-Origin', '*')
+        BaseHTTPRequestHandler.end_headers(self)
+
     def do_GET(self):
         # switch path
         if self.path == "/api/open/nodeID":
@@ -48,9 +53,9 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         # f"{nodeID}status" table columns: id, state, instances, calls, errors, latency, ram, uptime
         # can join them using id
         cur = conn.cursor()
-        cur.execute(f"SELECT id, name, description, endpoint, \
-            state, instances, calls, errors, latency, ram, uptime, \
-            FROM {nodeID} INNER JOIN {nodeID}status ON {nodeID}.id = {nodeID}status.id")
+        cur.execute(f"SELECT info{nodeID}.id, name, description, endpoint, \
+            state, instances, calls, errors, latency, ram, uptime \
+            FROM info{nodeID} INNER JOIN status{nodeID} ON info{nodeID}.id = status{nodeID}.id")
         rows = cur.fetchall()
 
         # create json response

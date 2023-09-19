@@ -3,18 +3,15 @@
 // It periodically pulls data from the server and updates the display
 
 // includes dynamictable.js, which contains the code to create the table
-include("dynamictable.js");
+import dynamic from "./dynamic.js";
 
+var dyn = new dynamic();
 
-// on page load, do this
-$(document).ready(function() {
-    // get nodeID from file
-    var nodeID = getNodeID();
-    // set the nodeID in the html
-    $("#nodeID").html(nodeID);
+// on page load without using jQuery, do this
+window.onload = function() {
   // set the interval to 5 seconds
   setInterval(function() {
     // call the function to update the display
-    updateDisplay();
+    dyn.updateDisplay();
   }, 5000);
-});
+};
