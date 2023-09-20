@@ -13,12 +13,6 @@ FROM ubuntu:latest
 SHELL ["/bin/bash", "-c"]
 RUN rm /bin/sh && ln -s /bin/bash /bin/sh
 RUN apt update && apt upgrade -y
-# languages already supported by the base image: bash, C, C++
-# for C#, Rust, Javascript, Typescript, Python we need to install the required packages:
-# - .NET Core 7
-# - NodeJS
-# - Rust
-# - Python3
 
 # install .NET SDK
 RUN apt install -y dotnet-sdk-7.0
@@ -35,6 +29,8 @@ RUN apt install -y python3
 RUN apt install -y git
 # install vscode server
 RUN curl -fsSL https://code-server.dev/install.sh | sh
+# install C/C++ build tools
+RUN apt install -y build-essential
 
 # make a directory for the project and set it as the working directory
 RUN mkdir /DollMaker && cd /DollMaker
