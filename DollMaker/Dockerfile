@@ -28,11 +28,16 @@ RUN source ~/.nvm/nvm.sh && nvm install --lts && nvm use --lts && node -v
 # install Rust
 RUN curl --proto '=https' --tlsv1.3 https://sh.rustup.rs -sSf | sh -s -- -y
 
-# install dev tools
+# install git
 RUN apt install -y git
+# install vscode server
+RUN curl -fsSL https://code-server.dev/install.sh | sh
+
+# make a directory for the project and set it as the working directory
+RUN mkdir /DollMaker && cd /DollMaker
 
 # define environment variables
 ENV TEST_VAR="test"
 
-# run indefinitely
+# run indefinitely to prevent the container from exiting
 CMD sleep infinity
