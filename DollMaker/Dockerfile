@@ -13,11 +13,12 @@ FROM ubuntu:latest
 SHELL ["/bin/bash", "-c"]
 RUN rm /bin/sh && ln -s /bin/bash /bin/sh
 RUN apt update && apt upgrade -y
-# languages already supported by the base image: bash, python3, C, C++
-# for C#, Rust, Javascript, Typescript, we need to install the required packages:
+# languages already supported by the base image: bash, C, C++
+# for C#, Rust, Javascript, Typescript, Python we need to install the required packages:
 # - .NET Core 7
 # - NodeJS
 # - Rust
+# - Python3
 
 # install .NET SDK
 RUN apt install -y dotnet-sdk-7.0
@@ -27,6 +28,8 @@ RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | b
 RUN source ~/.nvm/nvm.sh && nvm install --lts && nvm use --lts && node -v
 # install Rust
 RUN curl --proto '=https' --tlsv1.3 https://sh.rustup.rs -sSf | sh -s -- -y
+# install Python3
+RUN apt install -y python3
 
 # install git
 RUN apt install -y git
