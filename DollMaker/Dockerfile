@@ -34,10 +34,14 @@ RUN apt install -y build-essential
 RUN apt install -y cmake
 
 # make a directory for the project and set it as the working directory
-RUN mkdir /DollMaker && cd /DollMaker
+RUN mkdir /exe && mkdir /DollMaker && cd /DollMaker
 
 # define environment variables
-ENV TEST_VAR="test"
-
+ENV EXEPATH="/exe/"
+ENV EXENAME="doll"
+# exe state can be "0" (stateless) or "1" (stateful)
+ENV EXESTATE=0
+# exe lang can be "sh", "c", "cs", "js", "ts", "py", "rs"
+ENV EXELANG="c"
 # run indefinitely to prevent the container from exiting
 CMD sleep infinity

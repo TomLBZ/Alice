@@ -1,15 +1,16 @@
-// This is a command line program that prints out its arguments.
-// It is used to test the basic functionalities of the Doll wrapper.
-
 #include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
 
 int main(int argc, char *argv[]) {
-  int i;
-  for (i = 0; i < argc; i++) {
-    printf("%s ", argv[i]);
-  }
-  printf("\n");
-  // print "-- Doll: echo.c: end of program --\n"
-  printf("-- Doll: echo.c: end of program --\n");
-  return 0;
+    while(1) {
+        char *line = NULL;
+        size_t n = 0;
+        ssize_t result = getline(&line, &n, stdin);
+        //printf("result = %zd, n = %zu, line = \"%s\"\n", result, n, line);
+        // remove the trailing newline
+        line[result-1] = '\0';
+        printf("%s", line);
+        free(line);
+    }
 }

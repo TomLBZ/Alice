@@ -4,6 +4,13 @@
 # For the directory DollMaker:
 DollMaker/test
 
+# For the directory DollWrapper:
+DollWrapper/CMakeCache.txt
+DollWrapper/CMakeFiles
+DollWrapper/cmake_install.cmake
+DollWrapper/Makefile
+DollWrapper/bin
+
 # For the directory TestExecutables/C:
 # - ignores the CMake files
 # - ignores the binary files
