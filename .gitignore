@@ -1,3 +1,9 @@
+# for .vscode
+.vscode
+
+# For the directory DollMaker:
+DollMaker/test
+
 # For the directory TestExecutables/C:
 # - ignores the CMake files
 # - ignores the binary files
@@ -12,3 +18,4 @@ TestExecutables/C/bin
 # - ignores the dist directory
 TestExecutables/Typescript/node_modules
 TestExecutables/Typescript/dist
+
