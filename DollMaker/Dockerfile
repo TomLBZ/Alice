@@ -31,6 +31,7 @@ RUN apt install -y git
 RUN curl -fsSL https://code-server.dev/install.sh | sh
 # install C/C++ build tools
 RUN apt install -y build-essential
+RUN apt install -y cmake
 
 # make a directory for the project and set it as the working directory
 RUN mkdir /DollMaker && cd /DollMaker
