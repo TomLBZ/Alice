@@ -5,5 +5,5 @@ bool setup();
 char* getExePath();
 ExeState getExeState();
 ExeLang getExeLang();
-int getExeMaxInstances();
+size_t getExeMaxInstances();
 #endif

@@ -9,7 +9,7 @@ char* getExePath() {
         return NULL;
     }
     bool isEndsWithSlash = exepath[strlen(exepath)-1] == '/';
-    int totalStrLen = strlen(exepath) + strlen(exename) + 1 + (isEndsWithSlash ? 0 : 1);
+    size_t totalStrLen = strlen(exepath) + strlen(exename) + 1 + (isEndsWithSlash ? 0 : 1);
     char* output = (char*)malloc(sizeof(char) * totalStrLen);
     strcpy(output, exepath);
     if (isEndsWithSlash) {
@@ -61,13 +61,13 @@ ExeLang getExeLang() {
     }
 }
 
-int getExeMaxInstances() {
+size_t getExeMaxInstances() {
     char* exemaxinstances = getenv("DOLLEXEMAXINSTANCES");
     if (exemaxinstances == NULL) {
         printf("Error: environment variable DOLLEXEMAXINSTANCES not set properly");
         return 0;
     }
-    return atoi(exemaxinstances);
+    return (size_t)atol(exemaxinstances);
 }
 
 bool setup(){
@@ -78,12 +78,12 @@ bool setup(){
     if (exeMaxInstances == 0) return false;
     pInfoList = (PInfo*)malloc(sizeof(PInfo) * exeMaxInstances);
     availabilityList = (bool*)malloc(sizeof(bool) * exeMaxInstances);
-    stateIdList = (int*)malloc(sizeof(int) * exeMaxInstances);
+    stateIdList = (size_t*)malloc(sizeof(size_t) * exeMaxInstances);
     if (pInfoList == NULL || availabilityList == NULL || stateIdList == NULL) {
         printf("Error: malloc failed");
         return false;
     }
-    printf("exeMaxInstances: %d\n", exeMaxInstances);
+    printf("exeMaxInstances: %ld\n", exeMaxInstances);
     // exePath, exeState, exeLang are used to start the processes, so must be set after
     exePath = getExePath();
     if (exePath == NULL) return false;

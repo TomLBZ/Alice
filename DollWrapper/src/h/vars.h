@@ -4,13 +4,13 @@
 // Consts
 extern const PInfo POPEN2_NULL;
 // Vars
-extern int exeMaxInstances;
 extern char* exePath;
 extern ExeState exeState;
 extern ExeLang exeLang;
+extern size_t exeMaxInstances;
+extern size_t processCount;
 extern PInfo* pInfoList;
-extern int processCount;
+extern size_t* stateIdList;
 extern bool* availabilityList;
-extern int* stateIdList;
 
 #endif // VARS_H

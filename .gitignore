@@ -10,6 +10,7 @@ DollWrapper/CMakeFiles
 DollWrapper/cmake_install.cmake
 DollWrapper/Makefile
 DollWrapper/bin
+DollWrapper/src/externals
 
 # For the directory TestExecutables/C:
 # - ignores the CMake files
@@ -26,3 +27,5 @@ TestExecutables/C/bin
 TestExecutables/Typescript/node_modules
 TestExecutables/Typescript/dist
 
+# ignores uWebSockets
+uWebSockets

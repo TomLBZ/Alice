@@ -9,7 +9,7 @@ SRC_PATH="./src"
 CMAKELISTS_PATH="CMakeLists.txt"
 
 # get all .c and .h files
-FILES=$(ls $SRC_PATH | grep -E ".c")
+FILES=$(ls $SRC_PATH | grep -E ".cpp")
 HEADERS=$(ls $SRC_PATH/h | grep ".h")
 
 # generate the string

@@ -2,17 +2,18 @@
 #include "h/setup.h"
 #include "h/loop.h"
 #include "h/main.h"
+#include "externals/App.h"
 
 // defines global constants
 const PInfo POPEN2_NULL = {-1, -1, -1};
-int exeMaxInstances = 0;
 char* exePath = NULL;
 ExeState exeState = STATEERROR;
 ExeLang exeLang = LANGERROR;
+size_t exeMaxInstances = 0;
+size_t processCount = 0;
 PInfo* pInfoList = NULL;
-int processCount = 0;
+size_t* stateIdList = NULL;
 bool* availabilityList = NULL;
-int* stateIdList = NULL;
 
 int main(int argc, char *argv[]) {
     if (!setup()) return -1;
