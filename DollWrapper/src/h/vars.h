@@ -1,16 +1,16 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include "./types.h"
-#if !defined(GLOBALS_H)
-#define GLOBALS_H
+#if !defined(VARS_H)
+#define VARS_H
+#include "types.h"
 // Consts
 extern const PInfo POPEN2_NULL;
 // Vars
+extern int exeMaxInstances;
 extern char* exePath;
 extern ExeState exeState;
 extern ExeLang exeLang;
 extern PInfo* pInfoList;
 extern int processCount;
-extern int* availabilityList;
+extern bool* availabilityList;
 extern int* stateIdList;
-#endif // GLOBALS_H
+
+#endif // VARS_H

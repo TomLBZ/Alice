@@ -1,35 +1,54 @@
-#include <string.h>
 #include <time.h>
-#include "./globals.h"
-#include "./loop.h"
-#include "./popen2.h"
+#include <unistd.h>
+#include "h/globals.h"
+#include "h/loop.h"
+#include "h/popen2.h"
 
 void loop() {
-    while(1) {
+    printf("=== loop started ===\n");
+    long long int loopCount = 0;
+    while(true) {
+        loopCount++;
+        printf(">>> loop number: %lld\n", loopCount);
         char* input = getInputUnsafe(stdin);
         int processIndex = getAvailableProcessIndex();
-        PInfo process = pInfoList[processIndex];
-        if(process.pid == -1) process = startProcess();
+        PInfo process = POPEN2_NULL;
+        if (processIndex != -1) process = pInfoList[processIndex];
+        if(process.pid == -1) {
+            if (processCount < exeMaxInstances) process = startProcess();
+            else {
+                printf("error: max instances (%d) reached\n", exeMaxInstances);
+                free(input);
+                continue;
+            }
+        }
         if(process.pid != -1) {
-            processCount++;
+            processIndex = processCount;
+            printf("sending to index: %d; pid: %d; in: %d, out: %d\n", processIndex, process.pid, process.in, process.out);
+            pInfoList[processIndex] = process;
             if(exeState == STATEFULL){
                 int stateId = getStateId();
-                // resize the stateIdList
-                stateIdList = realloc(stateIdList, processCount * sizeof(int));
+                printf("started instance using stateId: %d\n", stateId);
                 stateIdList[processIndex] = stateId;
             }
-            // resize the availabilityList
-            availabilityList = realloc(availabilityList, processCount * sizeof(int));
-            availabilityList[processIndex] = 1;
+            availabilityList[processIndex] = false;
+            processCount++;
             // sends text to the process stdin
-            fprintf((FILE* restrict)process.in, "%s\n", input);
+            writeFd(process.in, input);
             // and get the process stdout
-            char* output = getInputUnsafe((FILE* restrict)process.out);
-            printf("%s\n", output);
-            availabilityList[processIndex] = 0;
+            char* output = readFd(process.out);
+            // write(process.in, input, strlen(input));
+            // close(process.in);
+            // char output[100];
+            // read(process.out, output, 100);
+            // printf("%s\n", output);
+            availabilityList[processIndex] = true;
+        } else {
+            printf("error: process could not be started\n");
         }
         free(input);
     }
+    printf("=== loop stopped ===\n");
 }
 
 char* getInputUnsafe(FILE* restrict stream) {
@@ -58,17 +77,8 @@ PInfo duplicate(PInfo pInfo) { // pass by value
 }
 
 PInfo startProcess() {
-    PInfo pInfo = duplicate(POPEN2_NULL);
-    if(exeLang == BASH) {
-        int totalStrLen = strlen("bash -c ") + strlen(exePath) + 1;
-        char* cmdline = malloc(totalStrLen);
-        strcpy(cmdline, "bash -c ");
-        strcat(cmdline, exePath);
-        if(popen2(cmdline, &pInfo)) return pInfo;
-        return POPEN2_NULL;
-    } else if(exeLang == BINARY) {
-        if(popen2(exePath, &pInfo)) return pInfo;
-        return POPEN2_NULL;
+    if(exeLang == BASH || exeLang == BINARY) {
+        return popen2(exePath);
     } else if(exeLang == JAVASCRIPT) {
         return POPEN2_NULL;
     } else if(exeLang == TYPESCRIPT) {
@@ -83,4 +93,20 @@ PInfo startProcess() {
 int getStateId() {
     srand((unsigned int)time(NULL));
     return rand();
+}
+
+void writeFd(int fd, char* str) {
+    int fd2 = dup(fd);
+    FILE* restrict f = fdopen(fd2, "w");
+    fprintf(f, "%s\n", str);
+    fclose(f);
+    printf("wrote to fd: %d\n", fd);
+}
+
+char* readFd(int fd) {
+    int fd2 = dup(fd);
+    FILE* restrict f = fdopen(fd2, "r");
+    char* str = getInputUnsafe(f);
+    fclose(f);
+    return str;
 }
