@@ -35,13 +35,6 @@ add_executable(${PROJECT_NAME}
     ${CMAKE_SOURCE_DIR}/main.cpp
     ${CMAKE_SOURCE_DIR}/popen2.cpp
     ${CMAKE_SOURCE_DIR}/setup.cpp
-    # ${CMAKE_SOURCE_DIR}/h/globals.h
-    # ${CMAKE_SOURCE_DIR}/h/loop.h
-    # ${CMAKE_SOURCE_DIR}/h/main.h
-    # ${CMAKE_SOURCE_DIR}/h/popen2.h
-    # ${CMAKE_SOURCE_DIR}/h/setup.h
-    # ${CMAKE_SOURCE_DIR}/h/types.h
-    # ${CMAKE_SOURCE_DIR}/h/vars.h
 )
 
 # specify output binary name

@@ -8,19 +8,14 @@
 SRC_PATH="./src"
 CMAKELISTS_PATH="CMakeLists.txt"
 
-# get all .c and .h files
+# get all .cpp files
 FILES=$(ls $SRC_PATH | grep -E ".cpp")
-HEADERS=$(ls $SRC_PATH/h | grep ".h")
 
 # generate the string
 STR=""
 for FILE in $FILES
 do
     STR="${STR}    \${CMAKE_SOURCE_DIR}/${FILE}\n"
-done
-for HEADER in $HEADERS
-do
-    STR="${STR}    \${CMAKE_SOURCE_DIR}/h/${HEADER}\n"
 done
 
 # the existing lines may look like this:
