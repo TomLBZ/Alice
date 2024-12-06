@@ -29,3 +29,6 @@ TestExecutables/Typescript/dist
 
 # ignores uWebSockets
 uWebSockets
+
+# For rust
+target
