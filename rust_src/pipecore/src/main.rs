@@ -1,61 +1,56 @@
 mod pipes;
 mod errors;
+mod io;
+
+fn prepare_pipes() -> Result<(), errors::PipeError> {
+    pipes::create_pipe("alice_in")?;
+    pipes::create_pipe("alice_out")?;
+    Ok(())
+}
+
+fn cleanup_pipes() -> Result<(), errors::PipeError> {
+    pipes::remove_pipe("alice_in")?;
+    pipes::remove_pipe("alice_out")?;
+    Ok(())
+}
+
+// fn to_upper(input: &str) -> String {
+//     input.to_uppercase()
+// }
 
 fn main() {
-    match pipes::create_pipe("alice_in") {
-        Ok(_) => {}
-        Err(e) => {
-            eprintln!("alice_in: {}", e);
-            return;
-        }
+    match prepare_pipes() {
+        Ok(_) => (),
+        Err(e) => eprintln!("{}", e),
     }
-    match pipes::create_pipe("alice_out") {
-        Ok(_) => {}
-        Err(e) => {
-            eprintln!("alice_out: {}", e);
-            return;
-        }
+    match io::link("stdin", "alice_in") {
+        Ok(_) => (),
+        Err(e) => eprintln!("{}", e),
+    }
+    // match io::middleware("stdin", "stdout", to_upper) {
+    //     Ok(_) => (),
+    //     Err(e) => eprintln!("{}", e),
+    // }
+    match io::link("alice_out", "stdout") {
+        Ok(_) => (),
+        Err(e) => eprintln!("{}", e),
+    }
+    // detect and handle ctrl + C
+    let (tx, rx) = std::sync::mpsc::channel();
+    match ctrlc::set_handler(move || {
+        tx.send(()).unwrap();
+    }) {
+        Ok(_) => (),
+        Err(e) => eprintln!("{}", e),
     }
     loop {
-        let input = match pipes::read_stdin() {
-            Ok(s) => s,
-            Err(e) => {
-                eprintln!("stdin: {}", e);
-                break;
-            }
-        };
-        match pipes::write_pipe("alice_in", &input) {
-            Ok(_) => {}
-            Err(e) => {
-                eprintln!("alice_in: {}", e);
-                break;
-            }
-        }
-        let output = match pipes::read_pipe("alice_out") {
-            Ok(s) => s,
-            Err(e) => {
-                eprintln!("alice_out: {}", e);
-                break;
-            }
-        };
-        match pipes::write_stdout(&output) {
-            Ok(_) => {}
-            Err(e) => {
-                eprintln!("stdout: {}", e);
-                break;
-            }
+        match rx.try_recv() {
+            Ok(_) => break,
+            Err(_) => (),
         }
     }
-    match pipes::remove_pipe("alice_in") {
-        Ok(_) => {}
-        Err(e) => {
-            eprintln!("alice_in: {}", e);
-        }
-    }
-    match pipes::remove_pipe("alice_out") {
-        Ok(_) => {}
-        Err(e) => {
-            eprintln!("alice_out: {}", e);
-        }
+    match cleanup_pipes() {
+        Ok(_) => (),
+        Err(e) => eprintln!("{}", e),
     }
 }

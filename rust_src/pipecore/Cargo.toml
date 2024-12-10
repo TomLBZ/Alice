@@ -4,4 +4,7 @@ version = "0.0.1"
 edition = "2021"
 # rust 2024 has not been released yet, so we use 2021 for now
 [dependencies]
+ctrlc = "3.4.5"
+# async-std = "1.13.0"
 libc = "0.2.167"
+# tokio = { version = "1.42.0", features = ["full"] }

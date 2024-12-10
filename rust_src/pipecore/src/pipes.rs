@@ -1,39 +1,11 @@
 use std::fs::remove_file;
-use std::io::{BufRead, BufReader, Write, BufWriter};
 use std::os::unix::fs::FileTypeExt; // for checking if a file is a FIFO
 use std::path::Path;
 
 extern crate libc;
 use std::ffi::CString;
 
-use crate::errors::{PipeError, StdStreamError};
-
-pub fn read_pipe(pipe: &str) -> Result<String, PipeError> {
-    match std::fs::OpenOptions::new().read(true).open(pipe) {
-        Ok(file) => {
-            let mut reader = BufReader::new(file);
-            let mut line = String::new();
-            match reader.read_line(&mut line) {
-                Ok(_) => Ok(line),
-                Err(_) => Err(PipeError::FailedToReadError),
-            }
-        }
-        Err(_) => Err(PipeError::PipeNotFoundError),
-    }
-}
-
-pub fn write_pipe(pipe: &str, data: &str) -> Result<(), PipeError> {
-    match std::fs::OpenOptions::new().write(true).open(pipe) {
-        Ok(file) => {
-            let mut writer = BufWriter::new(file);
-            match writer.write_all(data.as_bytes()) {
-                Ok(_) => Ok(()),
-                Err(_) => Err(PipeError::FailedToWriteError),
-            }
-        }
-        Err(_) => Err(PipeError::PipeNotFoundError),
-    }
-}
+use crate::errors::PipeError;
 
 fn fifo_pipe_available(pipe: &str) -> Result<bool, PipeError> {
     let path = Path::new(pipe);
@@ -83,24 +55,5 @@ pub fn remove_pipe(name: &str) -> Result<(), PipeError> {
     match remove_file(name) {
         Ok(_) => Ok(()),
         Err(_) => Err(PipeError::FailedToRemoveError),
-    }
-}
-
-pub fn read_stdin() -> Result<String, StdStreamError> {
-    let stdin = std::io::stdin();
-    let mut stdin_lock = stdin.lock();
-    let mut line = String::new();
-    match stdin_lock.read_line(&mut line) {
-        Ok(_) => Ok(line),
-        Err(_) => Err(StdStreamError::FailedToReadError),
-    }
-}
-
-pub fn write_stdout(data: &str) -> Result<(), StdStreamError> {
-    let stdout = std::io::stdout();
-    let mut stdout_lock = stdout.lock();
-    match stdout_lock.write_all(data.as_bytes()) {
-        Ok(_) => Ok(()),
-        Err(_) => Err(StdStreamError::FailedToWriteError),
     }
 }

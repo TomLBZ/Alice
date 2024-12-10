@@ -86,31 +86,3 @@ impl From<FailedToRemoveError> for PipeError {
         Self::FailedToRemoveError
     }
 }
-
-#[derive (Debug, Clone)]
-pub enum StdStreamError {
-    FailedToReadError,
-    FailedToWriteError,
-}
-impl Error for StdStreamError {}
-
-impl Display for StdStreamError {
-    fn fmt(&self, f: &mut Formatter) -> Result<(), FmtError> {
-        match self {
-            Self::FailedToReadError => write!(f, "Failed to read from stdin."),
-            Self::FailedToWriteError => write!(f, "Failed to write to stdout."),
-        }
-    }
-}
-
-impl From<FailedToReadError> for StdStreamError {
-    fn from(_: FailedToReadError) -> Self {
-        Self::FailedToReadError
-    }
-}
-
-impl From<FailedToWriteError> for StdStreamError {
-    fn from(_: FailedToWriteError) -> Self {
-        Self::FailedToWriteError
-    }
-}
