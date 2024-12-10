@@ -1,5 +1,6 @@
 [workspace]
 members = [
     "rust_src/pipecore",
+    "rust_src/doll",
 ]
 resolver = "2"
