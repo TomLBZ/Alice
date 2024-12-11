@@ -1,199 +1,82 @@
-use ctrlc;
-use std::env;
 use std::io::{BufRead, BufReader};
-use std::net::TcpStream;
 use std::sync::{
-    atomic::{AtomicBool, AtomicU64, Ordering},
-    mpsc::{self, Sender},
-    Arc, Mutex,
+    atomic::{AtomicBool, Ordering},
+    mpsc,
 };
-use std::thread;
-use tiny_http::{Method, Response, Server};
+use std::{env, thread};
 
+use ctrlc;
 
-/// A request message sent from the web thread to the output (stdout) thread.
-struct RequestMessage {
-    id: u64,
-    method: String,
-    path: String,
-    body: String,
-}
+mod server;
+use server::{start, RequestMessage};
 
 static SHUTDOWN: AtomicBool = AtomicBool::new(false);
 
 fn main() {
-    // Handle Ctrl+C to trigger a graceful shutdown
+    // Handle Ctrl+C for graceful shutdown
     ctrlc::set_handler(move || {
         SHUTDOWN.store(true, Ordering::SeqCst);
     })
     .expect("Error setting Ctrl-C handler");
 
-    // Get port from command line arguments or default to 9080
+    // Get port from command line arguments or default to 10080
     let args: Vec<String> = env::args().collect();
     let port = args
         .get(1)
         .and_then(|p| p.parse::<u16>().ok())
         .unwrap_or(9080);
 
-    let server_addr = format!("0.0.0.0:{}", port);
-    let server = Server::http(&server_addr).expect("Failed to start HTTP server");
-    println!("Listening on http://{}", server_addr);
+    // We'll use a channel for receiving requests from the server
+    let (request_tx, request_rx) = mpsc::channel::<RequestMessage>();
 
-    // Channels:
-    // Web -> Output (requests to print)
-    let (web_to_output_tx, web_to_output_rx) = mpsc::channel::<RequestMessage>();
+    // `on_request` closure: when the server receives a request, it sends it through `request_tx`.
+    let on_request = move |req_msg| {
+        request_tx.send(req_msg).unwrap();
+    };
+    let server_handle = start(port, on_request);
 
-    // A shared map from request ID to a sender waiting for a response.
-    // The input thread will read from stdin and send responses here.
-    let pending_responses =
-        Arc::new(Mutex::new(std::collections::HashMap::<u64, Sender<String>>::new()));
-
-    // Start the output thread (just prints requests to stdout)
-    {
-        let web_to_output_rx = web_to_output_rx;
-        thread::spawn(move || {
-            for req_msg in web_to_output_rx {
-                println!(
-                    "REQUEST {} {} {} {}\n",
-                    req_msg.id, req_msg.method, req_msg.path, req_msg.body
-                );
+    // Another thread monitors stdin. On receiving a line "<id> <response>", call respond_with
+    let server_handle_for_stdin = server_handle.clone(); // Move into a variable to keep it accessible
+    thread::spawn(move || {
+        let stdin = std::io::stdin();
+        let reader = BufReader::new(stdin);
+        for line in reader.lines() {
+            if SHUTDOWN.load(Ordering::SeqCst) {
+                break;
             }
-        });
-    }
 
-    // Start the input thread:
-    // This thread reads from stdin lines in the format:
-    // "<id> <response>"
-    // If <id> matches a pending request, send the response back to that request thread.
-    {
-        let pending_responses = Arc::clone(&pending_responses);
-        thread::spawn(move || {
-            let stdin = std::io::stdin();
-            let reader = BufReader::new(stdin);
-
-            for line_result in reader.lines() {
-                if SHUTDOWN.load(Ordering::SeqCst) {
-                    break;
-                }
-                let line = match line_result {
-                    Ok(l) => l.trim().to_string(),
-                    Err(_) => break,
-                };
-
-                if line.is_empty() {
-                    continue;
-                }
-
-                let mut parts = line.splitn(2, ' ');
-                let id_part = parts.next();
-                let body_part = parts.next();
-
-                let (id, body) = match (id_part, body_part) {
-                    (Some(id_str), Some(body_str)) => {
-                        if let Ok(id) = id_str.parse::<u64>() {
-                            (id, body_str.to_string())
-                        } else {
-                            continue; // Invalid format
-                        }
-                    }
-                    _ => continue,
-                };
-
-                let mut map = pending_responses.lock().unwrap();
-                if let Some(sender) = map.remove(&id) {
-                    let _ = sender.send(body);
-                } // else just ignore if ID not found
+            let line = match line {
+                Ok(l) => l.trim().to_string(),
+                Err(_) => break,
+            };
+            if line.is_empty() {
+                continue;
             }
-        });
-    }
 
-    let request_id_counter = Arc::new(AtomicU64::new(1));
-    let pending_responses_main = Arc::clone(&pending_responses);
+            let mut parts = line.splitn(2, ' ');
+            let id_str = parts.next();
+            let resp_body = parts.next();
 
-    // Main loop: accept connections and spawn a thread to handle each request
-    loop {
+            if let (Some(id_str), Some(body)) = (id_str, resp_body) {
+                if let Ok(id) = id_str.parse::<u64>() {
+                    server_handle_for_stdin.respond_with(id, body);
+                }
+            }
+        }
+    });
+
+    // The main thread: continuously receives RequestMessage and prints them to stdout
+    for req in request_rx {
         if SHUTDOWN.load(Ordering::SeqCst) {
             break;
         }
-
-        // Use a non-blocking check with a trick:
-        // tiny_http::Server doesn't provide a direct shutdown method, 
-        // so if we are shutting down, we send a dummy request to ourselves to unblock.
-        match server.recv() {
-            Ok(mut request) => {
-                if SHUTDOWN.load(Ordering::SeqCst) {
-                    // If shutdown requested after receiving a request, we can still handle it or drop it.
-                    // Let's handle gracefully: spawn a thread as we do.
-                }
-
-                let id = request_id_counter.fetch_add(1, Ordering::SeqCst);
-                let method = match request.method() {
-                    Method::Get => "GET".to_string(),
-                    Method::Post => "POST".to_string(),
-                    other => other.as_str().to_string(),
-                };
-                let path = request.url().to_string();
-
-                let mut body_bytes = Vec::new();
-                let mut reader = request.as_reader();
-                let _ = std::io::Read::read_to_end(&mut reader, &mut body_bytes);
-                let body = String::from_utf8_lossy(&body_bytes).to_string();
-
-                let web_to_output_tx_clone = web_to_output_tx.clone();
-                let pending_responses_clone = Arc::clone(&pending_responses_main);
-
-                // Spawn a thread to handle this request
-                thread::spawn(move || {
-                    // Send to output thread
-                    web_to_output_tx_clone
-                        .send(RequestMessage {
-                            id,
-                            method: method.clone(),
-                            path: path.clone(),
-                            body: body.clone(),
-                        })
-                        .expect("Failed to send request message to output thread");
-
-                    // Prepare a channel to receive the response
-                    let (tx, rx) = mpsc::channel::<String>();
-                    {
-                        let mut map = pending_responses_clone.lock().unwrap();
-                        map.insert(id, tx);
-                    }
-
-                    // Wait for the response from input thread
-                    let response_body = match rx.recv() {
-                        Ok(resp) => resp,
-                        Err(_) => "No response".to_string(),
-                    };
-
-                    let response = Response::from_string(response_body);
-                    if let Err(e) = request.respond(response) {
-                        eprintln!("Failed to respond to request {}: {}", id, e);
-                    }
-                });
-            }
-            Err(e) => {
-                if SHUTDOWN.load(Ordering::SeqCst) {
-                    // Likely we forced an unblock request
-                    break;
-                }
-                eprintln!("Error receiving request: {}", e);
-                // It's possible that server recv failed due to some error, we continue or break based on need
-            }
-        }
+        println!(
+            "Received Request: ID={}, Method={}, Path={}, Body={}",
+            req.id, req.method, req.path, req.body
+        );
     }
 
-    // Graceful shutdown steps:
-    // If we got here due to Ctrl+C (SHUTDOWN = true), let's try to unblock the server if it's still blocking.
-    // A known trick: Make a dummy request to let server.recv() return.
-    if !SHUTDOWN.load(Ordering::SeqCst) {
-        // If we're here because of some other reason, let's just exit.
-        return;
-    }
-
-    // If the server is still possibly blocking, try to force a dummy request:
-    let _ = TcpStream::connect(&server_addr);
-
-    println!("Server is shutting down gracefully.");
+    // Gracefully shut down
+    server_handle.shutdown();
+    println!("Exiting gracefully.");
 }

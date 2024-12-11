@@ -1,6 +1,5 @@
-use std::net::TcpStream;
 use std::sync::{
-    atomic::{AtomicBool, AtomicU64, Ordering},
+    atomic::{AtomicBool, Ordering},
     mpsc::{self, Sender},
     Arc, Mutex,
 };
@@ -8,6 +7,7 @@ use std::thread;
 
 use tiny_http::{Method, Response, Server};
 
+#[derive(Debug)]
 pub struct RequestMessage {
     pub id: u64,
     pub method: String,
@@ -15,132 +15,121 @@ pub struct RequestMessage {
     pub body: String,
 }
 
-/// Global shutdown flag for graceful termination
-static SHUTDOWN: AtomicBool = AtomicBool::new(false);
-
-pub fn shutdown() {
-    SHUTDOWN.store(true, Ordering::SeqCst);
+#[derive(Clone)]
+pub struct ServerHandle {
+    respond_with_fn: Sender<(u64, String)>,
+    shutdown_flag: Arc<AtomicBool>,
 }
 
-/// Starts the HTTP server on the given port.
+impl ServerHandle {
+    /// This function can be called to respond to a pending request.
+    /// `id` is the request ID, `resp` is the response body.
+    pub fn respond_with(&self, id: u64, resp: &str) {
+        if !self.shutdown_flag.load(Ordering::SeqCst) {
+            let _ = self.respond_with_fn.send((id, resp.to_string()));
+        }
+    }
+
+    /// Set the shutdown flag, indicating the server should stop.
+    pub fn shutdown(&self) {
+        self.shutdown_flag.store(true, Ordering::SeqCst);
+    }
+}
+
+/// Starts the server on the given `port`.
+/// `on_request` is a closure called whenever a request arrives.
 ///
-/// # Arguments
-/// - `port`: The port to listen on
-/// - `on_receive`: A callback function/closure that is called when a request is received.
-///                  It takes a `RequestMessage`.
-/// - `respond_with`: A callback function/closure that is used to respond to a request.
-///                    It takes `(id, response_body)` and sends the response back to the client.
-///
-/// The function returns a handle to the server thread. You can join on it if desired.
-pub fn start<F, G>(port: u16, on_receive: F, respond_with: G) -> std::thread::JoinHandle<()>
+/// Returns a `ServerHandle` that can be used to respond to requests.
+pub fn start<F>(port: u16, on_request: F) -> ServerHandle
 where
-    F: Fn(RequestMessage) + Send + 'static,
-    G: Fn(u64, &str) + Send + 'static,
+    F: Fn(RequestMessage) + Send + Sync + 'static,
 {
-    let on_receive = Arc::new(on_receive);
-    let respond_with = Arc::new(respond_with);
+    let server_addr = format!("0.0.0.0:{}", port);
+    let server = Server::http(&server_addr).expect("Failed to start HTTP server");
+    println!("Server listening on http://{}", server_addr);
 
+    // Shutdown flag
+    let shutdown_flag = Arc::new(AtomicBool::new(false));
+
+    // Channel to receive responses that will be sent to clients
+    let (resp_tx, resp_rx) = mpsc::channel::<(u64, String)>();
+
+    // Map of request ID to the actual `tiny_http::Request` object
+    let pending_requests =
+        Arc::new(Mutex::new(std::collections::HashMap::<u64, tiny_http::Request>::new()));
+
+    let on_request = Arc::new(on_request);
+    let pending_requests_server = Arc::clone(&pending_requests);
+    let shutdown_server = Arc::clone(&shutdown_flag);
+
+    // Spawn server thread to accept requests
     thread::spawn(move || {
-        let server_addr = format!("0.0.0.0:{}", port);
-        let server = Server::http(&server_addr).expect("Failed to start HTTP server");
-        println!("Server listening on http://{}", server_addr);
-
-        let request_id_counter = Arc::new(AtomicU64::new(1));
-        let pending_responses = Arc::new(Mutex::new(std::collections::HashMap::<u64, Sender<String>>::new()));
-
-        // Create a clone of the map for the respond_with callback
-        let pending_for_callback = Arc::clone(&pending_responses);
-
-        // Wrap respond_with so that it can find the correct channel for responding.
-        let respond_with_inner = {
-            let pending_for_callback = Arc::clone(&pending_for_callback);
-            move |id: u64, body: &str| {
-                let mut map = pending_for_callback.lock().unwrap();
-                if let Some(tx) = map.remove(&id) {
-                    let _ = tx.send(body.to_string());
-                } else {
-                    eprintln!("No pending request with id {} to respond to", id);
-                }
-            }
-        };
-
-        // Now create a closure that calls the user-supplied respond_with callback
-        // but we must ensure that the request has a waiting channel. The code above
-        // sends via the stored map, so we just connect the given respond_with to this closure.
-        let respond_with_user = Arc::clone(&respond_with);
-        let respond_with = move |id: u64, body: &str| {
-            // First respond using the internal logic
-            respond_with_inner(id, body);
-            // Optionally, call user callback after responding (if desired)
-            respond_with_user(id, body);
-        };
-
-        // Main loop: accept connections until shutdown
+        let mut next_id: u64 = 1;
         loop {
-            if SHUTDOWN.load(Ordering::SeqCst) {
+            if shutdown_server.load(Ordering::SeqCst) {
                 break;
             }
-
-            let request = match server.recv() {
-                Ok(rq) => rq,
-                Err(e) => {
-                    if SHUTDOWN.load(Ordering::SeqCst) {
+            let mut rq = match server.recv() {
+                Ok(r) => r,
+                Err(_) => {
+                    if shutdown_server.load(Ordering::SeqCst) {
                         break;
                     }
-                    eprintln!("Error receiving request: {}", e);
                     continue;
                 }
             };
 
-            if SHUTDOWN.load(Ordering::SeqCst) {
-                break;
-            }
+            let id = next_id;
+            next_id += 1;
 
-            let id = request_id_counter.fetch_add(1, Ordering::SeqCst);
-            let method = match request.method() {
+            let method = match rq.method() {
                 Method::Get => "GET".to_string(),
                 Method::Post => "POST".to_string(),
                 other => other.as_str().to_string(),
             };
-            let path = request.url().to_string();
-
+            let path = rq.url().to_string();
             let mut body_bytes = Vec::new();
-            if let Some(mut reader) = request.as_reader() {
-                let _ = std::io::Read::read_to_end(&mut reader, &mut body_bytes);
-            }
+            let _ = rq.as_reader().read_to_end(&mut body_bytes);
             let body = String::from_utf8_lossy(&body_bytes).to_string();
 
-            // Setup a channel to receive the response
-            let (tx, rx) = mpsc::channel::<String>();
             {
-                let mut map = pending_responses.lock().unwrap();
-                map.insert(id, tx);
+                let mut map = pending_requests_server.lock().unwrap();
+                map.insert(id, rq);
             }
 
-            let on_receive_cloned = Arc::clone(&on_receive);
+            let req_msg = RequestMessage {
+                id,
+                method,
+                path,
+                body,
+            };
 
-            // Spawn a thread to handle this request so multiple requests can be processed
-            // concurrently. The on_receive callback is called here.
-            thread::spawn(move || {
-                // Call the on_receive callback
-                let req_msg = RequestMessage { id, method, path, body };
-                on_receive_cloned(req_msg);
-
-                // Wait for the response
-                let response_body = match rx.recv() {
-                    Ok(resp) => resp,
-                    Err(_) => "No response".to_string(),
-                };
-
-                let response = Response::from_string(response_body);
-                if let Err(e) = request.respond(response) {
-                    eprintln!("Failed to respond to request {}: {}", id, e);
-                }
-            });
+            // Call the callback on the main thread side
+            on_request(req_msg);
         }
+        // Exiting server loop
+    });
 
-        println!("Server is shutting down gracefully.");
-        // Try to unblock server if it's still waiting
-        let _ = TcpStream::connect(&server_addr);
-    })
+    let pending_requests_resp = Arc::clone(&pending_requests);
+    let shutdown_resp = Arc::clone(&shutdown_flag);
+
+    // Spawn response thread: waits for responses from main and responds to requests
+    thread::spawn(move || {
+        while !shutdown_resp.load(Ordering::SeqCst) {
+            let (id, resp_str) = match resp_rx.recv() {
+                Ok(x) => x,
+                Err(_) => break,
+            };
+            let mut map = pending_requests_resp.lock().unwrap();
+            if let Some(rq) = map.remove(&id) {
+                let response = Response::from_string(resp_str);
+                let _ = rq.respond(response);
+            }
+        }
+    });
+
+    ServerHandle {
+        respond_with_fn: resp_tx,
+        shutdown_flag,
+    }
 }
