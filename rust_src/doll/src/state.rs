@@ -87,8 +87,8 @@ impl Manage for AppState {
                 eprintln!("No such process: {}", fname);
             }
         } else {
-            for (_, info) in &self.processes {
-                println!("{}", info);
+            for (k, v) in &self.processes {
+                println!("{}: {}", k, v);
             }
         }
     }

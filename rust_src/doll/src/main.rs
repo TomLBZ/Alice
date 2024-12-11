@@ -47,7 +47,11 @@ fn main() -> io::Result<()> {
             }
             Command::Info => {
                 let s = state.lock().unwrap();
-                s.get_info(Some(&command_info.exec_name));
+                if command_info.exec_name.is_empty() {
+                    s.get_info(None);
+                } else {
+                    s.get_info(Some(&command_info.exec_name));
+                }
             }
             Command::Send => {
                 let mut s = state.lock().unwrap();
