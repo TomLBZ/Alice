@@ -29,7 +29,6 @@ impl AppState {
 impl Manage for AppState {
     fn start_process(&mut self, filename: &str) -> Result<()> {
         let info = spawn(filename)?;
-        println!("Started {}", info);
         self.processes.insert(filename.to_string(), info);
         Ok(())
     }
@@ -63,7 +62,7 @@ impl Manage for AppState {
 
     fn get_output(&mut self, filename: &str) -> Result<String> {
         if let Some(info) = self.processes.get_mut(filename) {
-            info.receive()
+            info.receive(false)
         } else {
             eprintln!("No such running process: {}", filename);
             Err(Error::new(ErrorKind::NotFound, "Process not found"))
@@ -72,7 +71,7 @@ impl Manage for AppState {
 
     fn get_error(&mut self, filename: &str) -> Result<String> {
         if let Some(info) = self.processes.get_mut(filename) {
-            info.receive_err()
+            info.receive(true)
         } else {
             eprintln!("No such running process: {}", filename);
             Err(Error::new(ErrorKind::NotFound, "Process not found"))

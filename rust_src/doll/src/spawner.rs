@@ -1,6 +1,6 @@
 use std::fmt::{self, Display, Formatter};
 use std::process::{Child, Command, Stdio};
-use std::io::{Error, ErrorKind, Read, Result, Write};
+use std::io::{BufRead, BufReader, Error, ErrorKind, Result, Write};
 use std::time::SystemTime;
 use std::path::Path;
 use std::os::unix::fs::FileTypeExt; // for checking if a file is a FIFO
@@ -23,8 +23,7 @@ pub trait Control {
     fn restart(&mut self) -> Result<()>;
     fn auto_restart(&mut self) -> Result<()>;
     fn send(&mut self, text: &str) -> Result<()>;
-    fn receive(&mut self) -> Result<String>;
-    fn receive_err(&mut self) -> Result<String>;
+    fn receive(&mut self, error: bool) -> Result<String>;
 }
 
 impl Control for ProcessInfo {
@@ -56,21 +55,19 @@ impl Control for ProcessInfo {
         Ok(())
     }
     fn send(&mut self, text: &str) -> Result<()> {
-        let mut f = OpenOptions::new().write(true).open(&self.in_pipe)?;
+        let mut f = OpenOptions::new().read(true).write(true).open(&self.in_pipe)?;
         writeln!(f, "{}", text)?;
+        println!("Sent to {}: {}", self.in_pipe, text);
         Ok(())
     }
-    fn receive(&mut self) -> Result<String> {
-        let mut f = OpenOptions::new().read(true).open(&self.out_pipe)?;
-        let mut s = String::new();
-        f.read_to_string(&mut s)?;
-        Ok(s)
-    }
-    fn receive_err(&mut self) -> Result<String> {
-        let mut f = OpenOptions::new().read(true).open(&self.err_pipe)?;
-        let mut s = String::new();
-        f.read_to_string(&mut s)?;
-        Ok(s)
+    fn receive(&mut self, error: bool) -> Result<String> {
+        let path = if error { &self.err_pipe } else { &self.out_pipe };
+        let f = OpenOptions::new().read(true).write(true).open(path)?;
+        println!("Reading from {}", self.out_pipe);
+        let mut reader = BufReader::new(&f);
+        let mut line = String::new();
+        reader.read_line(&mut line)?;
+        Ok(line)
     }
 }
 
@@ -136,17 +133,15 @@ fn remove_pipe(name: &str) -> Result<()> {
     }
 }
 
-fn forward_io<R, W>(mut reader: R, mut writer: W) where
-    R: Read + Send + 'static, W: Write + Send + 'static,
-{
+fn forward_io<R, W>(mut reader: R, mut writer: W) where R: BufRead + Send + 'static, W: Write + Send + 'static {
     thread::spawn(move || {
-        let mut buf = [0u8; 1024];
         loop { // never breaks
-            match reader.read(&mut buf) {
+            let mut line = String::new();
+            match reader.read_line(&mut line) {
                 Ok(0) => continue, // EOF on reader
-                Ok(n) => {
-                    if writer.write_all(&buf[..n]).is_err() {
-                        continue; // Writer failed
+                Ok(_) => { // read a line
+                    if let Err(_) = writer.write_all(line.as_bytes()) {
+                        continue; // Writer failed to write text
                     }
                 }
                 Err(_) => continue, // Error reading
@@ -156,6 +151,19 @@ fn forward_io<R, W>(mut reader: R, mut writer: W) where
 }
 
 pub fn spawn(exec_name: &str) -> Result<ProcessInfo> {
+    let mut child = Command::new("stdbuf")
+        .arg("-oL") // output line buffered
+        .arg("-eL") // error line buffered
+        .arg(exec_name)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()?;
+    let pid = child.id();
+    let child_in = child.stdin.take().expect("Failed to open stdin.");
+    let child_out = child.stdout.take().expect("Failed to open stdout.");
+    let child_err = child.stderr.take().expect("Failed to open stderr.");
+    println!("Child process spawned.");
     let timestamp = match SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
         Ok(t) => t.as_secs(),
         Err(e) => return Err(build_io_error(&format!("Failed to get timestamp: {}", e))),
@@ -169,25 +177,12 @@ pub fn spawn(exec_name: &str) -> Result<ProcessInfo> {
     create_pipe(&out_pipe)?;
     create_pipe(&err_pipe)?;
     println!("Pipes created successfully.");
-    // Spawn the process with redirected stdin, stdout, stderr (anonymous pipes)
-    let mut child = Command::new(exec_name)
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()?;
-    println!("Process spawned successfully.");
-    let pid = child.id();
-    let child_in = child.stdin.take().expect("Failed to open stdin.");
-    let child_out = child.stdout.take().expect("Failed to open stdout.");
-    let child_err = child.stderr.take().expect("Failed to open stderr.");
-    println!("Got child stdin, stdout and stderr.");
     let in_pipe_file = OpenOptions::new().read(true).write(true).open(&in_pipe)?;
     let out_pipe_file = OpenOptions::new().read(true).write(true).open(&out_pipe)?;
     let err_pipe_file = OpenOptions::new().read(true).write(true).open(&err_pipe)?;
-    println!("Opened pipe files.");
-    forward_io(in_pipe_file, child_in);
-    forward_io(child_out, out_pipe_file);
-    forward_io(child_err, err_pipe_file);
+    forward_io(BufReader::new(in_pipe_file), child_in);
+    forward_io(BufReader::new(child_out), out_pipe_file);
+    forward_io(BufReader::new(child_err), err_pipe_file);
     println!("Forwarded IO.");
 
     let info = ProcessInfo {
