@@ -1,10 +1,9 @@
 use std::fmt::{self, Display, Formatter};
 use std::process::{Child, Command, Stdio};
-use std::io::{self, Error, ErrorKind, Read, Result, Write};
+use std::io::{Error, ErrorKind, Read, Result, Write};
 use std::time::SystemTime;
 use std::path::Path;
 use std::os::unix::fs::FileTypeExt; // for checking if a file is a FIFO
-use std::os::fd::{AsRawFd, FromRawFd};
 use std::ffi::CString;
 use std::fs::{remove_file, OpenOptions};
 use std::thread;
@@ -137,20 +136,23 @@ fn remove_pipe(name: &str) -> Result<()> {
     }
 }
 
-fn link_by_fd(ifd: i32, ofd: i32) -> Result<()> {
+fn forward_io<R, W>(mut reader: R, mut writer: W) where
+    R: Read + Send + 'static, W: Write + Send + 'static,
+{
     thread::spawn(move || {
-        loop {
-            let mut reader = Box::new(unsafe { std::fs::File::from_raw_fd(ifd) });
-            let mut writer = Box::new(unsafe { std::fs::File::from_raw_fd(ofd) });
-            let result = io::copy(&mut reader, &mut writer);
-            match result {
-                Ok(0) => (),
-                Ok(_) => (),
-                Err(e) => eprintln!("Failed to copy data: {}", e),
+        let mut buf = [0u8; 1024];
+        loop { // never breaks
+            match reader.read(&mut buf) {
+                Ok(0) => continue, // EOF on reader
+                Ok(n) => {
+                    if writer.write_all(&buf[..n]).is_err() {
+                        continue; // Writer failed
+                    }
+                }
+                Err(_) => continue, // Error reading
             }
         }
     });
-    Ok(())
 }
 
 pub fn spawn(exec_name: &str) -> Result<ProcessInfo> {
@@ -158,9 +160,11 @@ pub fn spawn(exec_name: &str) -> Result<ProcessInfo> {
         Ok(t) => t.as_secs(),
         Err(e) => return Err(build_io_error(&format!("Failed to get timestamp: {}", e))),
     };
-    let in_pipe = format!("{}{}.i", exec_name, timestamp);
-    let out_pipe = format!("{}{}.o", exec_name, timestamp);
-    let err_pipe = format!("{}{}.e", exec_name, timestamp);
+    // exec_name may contain path. needs to get only the executable name
+    let exec_fname = Path::new(exec_name).file_name().unwrap().to_str().unwrap();
+    let in_pipe = format!("{}{}.i", exec_fname, timestamp);
+    let out_pipe = format!("{}{}.o", exec_fname, timestamp);
+    let err_pipe = format!("{}{}.e", exec_fname, timestamp);
     create_pipe(&in_pipe)?;
     create_pipe(&out_pipe)?;
     create_pipe(&err_pipe)?;
@@ -176,18 +180,15 @@ pub fn spawn(exec_name: &str) -> Result<ProcessInfo> {
     let child_in = child.stdin.take().expect("Failed to open stdin.");
     let child_out = child.stdout.take().expect("Failed to open stdout.");
     let child_err = child.stderr.take().expect("Failed to open stderr.");
-    let child_in_fd = child_in.as_raw_fd();
-    let child_out_fd = child_out.as_raw_fd();
-    let child_err_fd = child_err.as_raw_fd();
-    let in_pipe_cstr = CString::new(in_pipe.clone()).unwrap();
-    let out_pipe_cstr = CString::new(out_pipe.clone()).unwrap();
-    let err_pipe_cstr = CString::new(err_pipe.clone()).unwrap();
-    let in_pipe_fd = unsafe { libc::open(in_pipe_cstr.as_ptr(), libc::O_WRONLY) };
-    let out_pipe_fd = unsafe { libc::open(out_pipe_cstr.as_ptr(), libc::O_RDONLY) };
-    let err_pipe_fd = unsafe { libc::open(err_pipe_cstr.as_ptr(), libc::O_RDONLY) };
-    link_by_fd(in_pipe_fd, child_in_fd)?;
-    link_by_fd(child_out_fd, out_pipe_fd)?;
-    link_by_fd(child_err_fd, err_pipe_fd)?;
+    println!("Got child stdin, stdout and stderr.");
+    let in_pipe_file = OpenOptions::new().read(true).write(true).open(&in_pipe)?;
+    let out_pipe_file = OpenOptions::new().read(true).write(true).open(&out_pipe)?;
+    let err_pipe_file = OpenOptions::new().read(true).write(true).open(&err_pipe)?;
+    println!("Opened pipe files.");
+    forward_io(in_pipe_file, child_in);
+    forward_io(child_out, out_pipe_file);
+    forward_io(child_err, err_pipe_file);
+    println!("Forwarded IO.");
 
     let info = ProcessInfo {
         exec_name: exec_name.to_string(),
