@@ -1,18 +1,28 @@
-use std::sync::{
+use std::thread;
+use std::fmt::Display;
+use std:: sync::{
     atomic::{AtomicBool, Ordering},
     mpsc::{self, Sender},
     Arc, Mutex,
 };
-use std::thread;
 
 use tiny_http::{Method, Response, Server};
 
-#[derive(Debug)]
 pub struct RequestMessage {
     pub id: u64,
     pub method: String,
     pub path: String,
     pub body: String,
+}
+
+impl Display for RequestMessage {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "[{}]{}:{} {{{}}}",
+            self.id, self.method, self.path, self.body
+        )
+    }
 }
 
 #[derive(Clone)]
@@ -50,15 +60,13 @@ where
 
     // Shutdown flag
     let shutdown_flag = Arc::new(AtomicBool::new(false));
-
     // Channel to receive responses that will be sent to clients
     let (resp_tx, resp_rx) = mpsc::channel::<(u64, String)>();
-
     // Map of request ID to the actual `tiny_http::Request` object
     let pending_requests =
         Arc::new(Mutex::new(std::collections::HashMap::<u64, tiny_http::Request>::new()));
-
     let on_request = Arc::new(on_request);
+    
     let pending_requests_server = Arc::clone(&pending_requests);
     let shutdown_server = Arc::clone(&shutdown_flag);
 

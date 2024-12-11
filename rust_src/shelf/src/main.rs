@@ -65,15 +65,18 @@ fn main() {
         }
     });
 
-    // The main thread: continuously receives RequestMessage and prints them to stdout
-    for req in request_rx {
-        if SHUTDOWN.load(Ordering::SeqCst) {
-            break;
+    thread::spawn(move || {
+        for req in request_rx {
+            if SHUTDOWN.load(Ordering::SeqCst) {
+                break;
+            }
+            println!("{}", req);
         }
-        println!(
-            "Received Request: ID={}, Method={}, Path={}, Body={}",
-            req.id, req.method, req.path, req.body
-        );
+    });
+
+    // The main thread: handles Ctrl+C and waits for the server to finish
+    while !SHUTDOWN.load(Ordering::SeqCst) {
+        thread::sleep(std::time::Duration::from_millis(100));
     }
 
     // Gracefully shut down
