@@ -2,5 +2,6 @@
 members = [
     "rust_src/pipecore",
     "rust_src/doll",
+    "rust_src/shelf",
 ]
 resolver = "2"
