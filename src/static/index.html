@@ -11,6 +11,7 @@
     <thead>
       <tr>
         <th>ID</th>
+        <th>Mode</th>
         <th>Description</th>
         <th>Sessions</th>
         <th>Uptime (s)</th>
@@ -27,6 +28,11 @@
       <input name="version" type="hidden" />
       <label>Description:</label>
       <input name="description" required />
+      <label>Mode:</label>
+      <select name="mode" required>
+        <option value="function">Function</option>
+        <option value="service">Service</option>
+      </select>
       <label>Rename:</label>
       <input name="new_name" placeholder="New name" />
       <input name="new_version" placeholder="New version" />
@@ -42,6 +48,11 @@
     <input name="name" placeholder="Name" required />
     <input name="version" placeholder="Version" required />
     <input name="description" placeholder="Description" required />
+    <label>Mode:</label>
+    <select name="mode" required>
+      <option value="function">Function</option>
+      <option value="service">Service</option>
+    </select>
     <input name="exec_file" type="file" required />
     <button type="submit">Create</button>
   </form>

@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/home/lbz/venv/bin/python3
 
 import sys
 while(True):

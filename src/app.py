@@ -9,7 +9,7 @@ import asyncio
 import shutil
 import redis
 import json
-from datetime import datetime, timedelta
+from datetime import datetime
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -26,7 +26,7 @@ async def root():
 @app.get("/services")
 def get_all_services():
     services = rdb.hgetall("service_registry")
-    now = int(datetime.now().timestamp())
+    now = int(datetime.utcnow().timestamp())
     result = {}
     for k, v in services.items():
         info = json.loads(v)
@@ -41,6 +41,7 @@ async def create_service(
     name: str = Form(...),
     version: str = Form(...),
     description: str = Form(...),
+    mode: str = Form(...),  # "function" or "service"
     exec_file: UploadFile = File(...)
 ):
     service_id = f"{name}:{version}"
@@ -54,6 +55,7 @@ async def create_service(
         "name": name,
         "version": version,
         "description": description,
+        "mode": mode,
         "exec_path": service_path,
         "created_at": now,
         "sessions": 0,
@@ -69,6 +71,7 @@ async def update_service(
     new_name: str = Form(None),
     new_version: str = Form(None),
     description: str = Form(...),
+    mode: str = Form(...),
     exec_file: UploadFile = File(None)
 ):
     service_id = f"{name}:{version}"
@@ -77,6 +80,7 @@ async def update_service(
         return JSONResponse(status_code=404, content={"error": "Service not found"})
     info = json.loads(data)
     info["description"] = description
+    info["mode"] = mode
 
     if exec_file:
         old_path = info.get("exec_path")
@@ -120,23 +124,15 @@ async def serve_service(name: str, version: str, websocket: WebSocket):
 
     info = json.loads(data)
     exec_path = info["exec_path"]
+    mode = info.get("mode", "function")
     info["sessions"] += 1
     rdb.hset("service_registry", service_id, json.dumps(info))
 
     try:
-        while True:
-            input_data = await websocket.receive_text()
-            proc = await asyncio.create_subprocess_exec(
-                exec_path,
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
-            )
-            stdout, stderr = await proc.communicate(input=input_data.encode())
-            if stderr:
-                await websocket.send_text(stderr.decode())
-            else:
-                await websocket.send_text(stdout.decode())
+        if mode == "function":
+            await handle_function_mode(websocket, exec_path)
+        else:
+            await handle_service_mode(websocket, exec_path)
     except WebSocketDisconnect:
         pass
     finally:
@@ -145,6 +141,50 @@ async def serve_service(name: str, version: str, websocket: WebSocket):
             info = json.loads(data)
             info["sessions"] = max(0, info["sessions"] - 1)
             rdb.hset("service_registry", service_id, json.dumps(info))
+
+async def handle_function_mode(websocket, exec_path):
+    while True:
+        input_data = await websocket.receive_text()
+        proc = await asyncio.create_subprocess_exec(
+            exec_path,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        stdout, stderr = await proc.communicate(input=input_data.encode())
+        if stderr:
+            await websocket.send_text(stderr.decode())
+        else:
+            await websocket.send_text(stdout.decode())
+
+async def handle_service_mode(websocket, exec_path):
+    proc = await asyncio.create_subprocess_exec(
+        exec_path,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
+
+    async def read_stdout():
+        while True:
+            line = await proc.stdout.readline()
+            if line:
+                await websocket.send_text(line.decode())
+            else:
+                break
+
+    reader = asyncio.create_task(read_stdout())
+
+    try:
+        while True:
+            input_data = await websocket.receive_text()
+            if proc.stdin:
+                proc.stdin.write(input_data.encode() + b"\n")
+                await proc.stdin.drain()
+    except WebSocketDisconnect:
+        reader.cancel()
+        proc.terminate()
+        await proc.wait()
 
 if __name__ == "__main__":
     import uvicorn
