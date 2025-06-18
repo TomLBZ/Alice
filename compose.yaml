@@ -1,0 +1,31 @@
+services:
+  db:
+    image: redis:latest
+    container_name: redis_db
+    ports:
+      - "16379:6379"
+    volumes:
+      - ./persistence/redis/data:/data
+      - ./persistence/redis/conf:/usr/local/etc/redis
+    command: redis-server /usr/local/etc/redis/redis.conf
+  dbadmin:
+    image: redis/redisinsight:latest
+    container_name: redis_admin
+    ports:
+      - "15540:5540"
+    volumes:
+      - ./persistence/redisinsight/data:/data
+    depends_on:
+      - db
+  alice:
+    image: alice:latest
+    build:
+      context: ./src/gateway
+      dockerfile: Dockerfile
+    container_name: alice
+    ports:
+      - "18000:8000"
+    volumes:
+      - ./src/gateway:/app
+    depends_on:
+      - db

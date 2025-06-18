@@ -32,3 +32,12 @@ uWebSockets
 
 # For rust
 target
+
+# For venv
+src/gateway/venv
+src/gateway/__pycache__
+src/gateway/*/__pycache__
+
+# For persistent data
+persistence/redis/data
+persistence/redisinsight/data
