@@ -1,0 +1,7 @@
+redis
+fastapi
+python-jose
+uvicorn
+requests
+python-multipart
+websockets

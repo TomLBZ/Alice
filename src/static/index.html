@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Service Manager</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <h1>Service Dashboard</h1>
+
+  <table id="serviceTable">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Description</th>
+        <th>Sessions</th>
+        <th>Uptime (s)</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="servicesBody"></tbody>
+  </table>
+
+  <div id="editSection" style="display:none;">
+    <h2>Edit Service</h2>
+    <form id="editForm">
+      <input name="name" type="hidden" />
+      <input name="version" type="hidden" />
+      <label>Description:</label>
+      <input name="description" required />
+      <label>Rename:</label>
+      <input name="new_name" placeholder="New name" />
+      <input name="new_version" placeholder="New version" />
+      <label>New Executable:</label>
+      <input name="exec_file" type="file" />
+      <button type="submit">Update</button>
+      <button type="button" onclick="cancelEdit()">Cancel</button>
+    </form>
+  </div>
+
+  <h2>Create New Service</h2>
+  <form id="createForm">
+    <input name="name" placeholder="Name" required />
+    <input name="version" placeholder="Version" required />
+    <input name="description" placeholder="Description" required />
+    <input name="exec_file" type="file" required />
+    <button type="submit">Create</button>
+  </form>
+
+  <h2>Test Service</h2>
+  <select id="testSelector" onchange="selectTestService()">
+    <option value="">Select service...</option>
+  </select>
+  <div id="testBox" style="display:none;">
+    <textarea id="testInput" placeholder="Enter input..."></textarea>
+    <textarea id="testOutput" placeholder="Output..." readonly></textarea>
+    <br />
+    <button onclick="startSession()">Start</button>
+    <button onclick="sendInput()">Send</button>
+    <button onclick="endSession()">End</button>
+  </div>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>

@@ -20,12 +20,12 @@ services:
   alice:
     image: alice:latest
     build:
-      context: ./src/gateway
+      context: ./src
       dockerfile: Dockerfile
     container_name: alice
     ports:
       - "18000:8000"
     volumes:
-      - ./src/gateway:/app
+      - ./src:/app
     depends_on:
       - db

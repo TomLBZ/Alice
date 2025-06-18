@@ -1,5 +1,0 @@
-redis
-fastapi
-python-jose
-uvicorn
-requests

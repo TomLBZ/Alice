@@ -1,0 +1,21 @@
+body {
+  font-family: sans-serif;
+  padding: 20px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+th, td {
+  border: 1px solid #ccc;
+  padding: 5px;
+  text-align: left;
+}
+textarea {
+  width: 48%;
+  height: 100px;
+}
+input, select, button {
+  margin: 5px;
+}
