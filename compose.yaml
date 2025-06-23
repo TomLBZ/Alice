@@ -2,6 +2,7 @@ services:
   db:
     image: redis:latest
     container_name: redis_db
+    restart: always
     ports:
       - "16379:6379"
     volumes:
@@ -11,6 +12,7 @@ services:
   dbadmin:
     image: redis/redisinsight:latest
     container_name: redis_admin
+    restart: always
     ports:
       - "15540:5540"
     volumes:
@@ -23,6 +25,7 @@ services:
       context: ./src
       dockerfile: Dockerfile
     container_name: alice
+    restart: always
     ports:
       - "18000:8000"
     volumes:
