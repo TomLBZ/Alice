@@ -1,7 +1,7 @@
 # Alice
 A simple framework for quick development and rapid iteration of microservices in any language.
 ## The Vision
-No networking, no boilerplate, no fuss. You only have to build a program that reads from stdin and writes to stdout. The framework will take care of the rest.
+No networking, no boilerplate, no fuss. You only have to build a program that reads from stdin and writes to stdout. The framework will take care of the rest. Make sure your program is executable. If it is a script, add a shebang line at the top. If it is a compiled binary, make sure it is in your server's PATH.
 ## How to use
 ### Developers
 - Clone the repository and run `docker compose up`.
