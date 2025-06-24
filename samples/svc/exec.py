@@ -15,10 +15,26 @@ def run_code(code: str) -> str:
         error = "ERROR:\n" + traceback.format_exc()
     return result, error
 
+def multiline_input(prompt: str) -> str:
+    print(prompt, end="")
+    lines = []
+    while True:
+        try:
+            line = input()
+            if line.strip() == "":
+                break
+            lines.append(line)
+        except EOFError:
+            break
+        except KeyboardInterrupt:
+            print("\nExiting multiline input.")
+            break
+    return "\n".join(lines)
+
 if __name__ == "__main__":
     while True:
         try:
-            input_string = input()
+            input_string = multiline_input("Enter code (end with a blank line):\n")
             output, error = run_code(input_string)
             if error:
                 print(error)
