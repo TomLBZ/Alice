@@ -26,7 +26,7 @@ async def root():
 @app.get("/services")
 def get_all_services():
     services = rdb.hgetall("service_registry")
-    now = int(datetime.utcnow().timestamp())
+    now = int(datetime.now().timestamp())
     result = {}
     for k, v in services.items():
         info = json.loads(v)
@@ -50,7 +50,7 @@ async def create_service(
         shutil.copyfileobj(exec_file.file, f)
     os.chmod(service_path, 0o755)
 
-    now = int(datetime.utcnow().timestamp())
+    now = int(datetime.now().timestamp())
     info = {
         "name": name,
         "version": version,
