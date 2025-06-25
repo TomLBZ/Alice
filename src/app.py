@@ -10,6 +10,7 @@ import shutil
 import redis
 import json
 from datetime import datetime
+from typing import Awaitable
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -28,6 +29,7 @@ def get_all_services():
     services = rdb.hgetall("service_registry")
     now = int(datetime.now().timestamp())
     result = {}
+    assert isinstance(services, dict), "Expected services to be a dictionary"
     for k, v in services.items():
         info = json.loads(v)
         created_at = info.get("created_at", now)
@@ -76,6 +78,8 @@ async def update_service(
 ):
     service_id = f"{name}:{version}"
     data = rdb.hget("service_registry", service_id)
+    if isinstance(data, Awaitable):
+        data = await data
     if not data:
         return JSONResponse(status_code=404, content={"error": "Service not found"})
     info = json.loads(data)
@@ -106,6 +110,10 @@ async def delete_service(name: str = Form(...), version: str = Form(...)):
     if not rdb.hexists("service_registry", service_id):
         return JSONResponse(status_code=404, content={"error": "Service not found"})
     data = rdb.hget("service_registry", service_id)
+    if isinstance(data, Awaitable):
+        data = await data
+    if not data:
+        return JSONResponse(status_code=404, content={"error": "Service not found"})
     info = json.loads(data)
     exec_path = info.get("exec_path")
     if exec_path and os.path.exists(exec_path):
@@ -118,6 +126,8 @@ async def serve_service(name: str, version: str, websocket: WebSocket):
     await websocket.accept()
     service_id = f"{name}:{version}"
     data = rdb.hget("service_registry", service_id)
+    if isinstance(data, Awaitable):
+        data = await data
     if not data:
         await websocket.close(code=4404)
         return
@@ -137,6 +147,8 @@ async def serve_service(name: str, version: str, websocket: WebSocket):
         pass
     finally:
         data = rdb.hget("service_registry", service_id)
+        if isinstance(data, Awaitable):
+            data = await data
         if data:
             info = json.loads(data)
             info["sessions"] = max(0, info["sessions"] - 1)
@@ -167,6 +179,8 @@ async def handle_service_mode(websocket, exec_path):
 
     async def read_stdout():
         while True:
+            if proc.stdout is None:
+                break
             line = await proc.stdout.readline()
             if line:
                 await websocket.send_text(line.decode())

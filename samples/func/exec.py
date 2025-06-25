@@ -2,8 +2,9 @@
 import io
 import contextlib
 import traceback
+from typing import Tuple
 
-def run_code(code: str) -> str:
+def run_code(code: str) -> Tuple[str, str]:
     result = ""
     error = ""
     try:
