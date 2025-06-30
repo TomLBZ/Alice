@@ -1,82 +1,64 @@
+<!-- static/index.html -->
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Service Manager</title>
-  <link rel="stylesheet" href="/static/style.css" />
+  <meta charset="UTF-8">
+  <title>Service Dashboard</title>
+  <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-  <h1>Service Dashboard</h1>
-
-  <table id="serviceTable">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Mode</th>
-        <th>Description</th>
-        <th>Sessions</th>
-        <th>Uptime (s)</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody id="servicesBody"></tbody>
-  </table>
-
-  <div id="editSection" style="display:none;">
-    <h2>Edit Service</h2>
-    <form id="editForm" class="form-vertical">
-      <input name="name" type="hidden" />
-      <input name="version" type="hidden" />
-      <label>Description:</label>
-      <input name="description" required />
-      <label>Mode:</label>
-      <select name="mode" required>
-        <option value="function">Function</option>
-        <option value="service">Service</option>
-      </select>
-      <label>Rename:</label>
-      <input name="new_name" placeholder="New name" />
-      <input name="new_version" placeholder="New version" />
-      <label>New Executable:</label>
-      <input name="exec_file" type="file" />
-      <button type="submit">Update</button>
-      <button type="button" onclick="cancelEdit()">Cancel</button>
-    </form>
+  <h1>Registered Services</h1>
+  <div id="tableContainer">
+    <table id="serviceTable">
+      <thead>
+        <tr><th>Name</th><th>Mode</th><th>Description</th><th>Sessions</th><th>Uptime</th><th>Actions</th></tr>
+      </thead>
+      <tbody id="servicesBody"></tbody>
+    </table>
   </div>
 
-  <h2>Create New Service</h2>
-  <form id="createForm" class="form-vertical">
-    <label>Name:</label>
-    <input name="name" required />
-    <label>Version:</label>
-    <input name="version" required />
-    <label>Description:</label>
-    <input name="description" required />
-    <label>Mode:</label>
-    <select name="mode" required>
-      <option value="function">Function</option>
-      <option value="service">Service</option>
-    </select>
-    <label>Executable:</label>
-    <input name="exec_file" type="file" required />
-    <button type="submit">Create</button>
-  </form>
+  <button id="createBtn">+ Create New Service</button>
 
-  <h2>Test Service</h2>
-  <select id="testSelector" onchange="selectTestService()">
-    <option value="">Select service...</option>
-  </select>
-  <div id="testBox" style="display:none;">
-    <h4>Selected: <span id="selectedServiceName"></span></h4>
+  <div id="modal" class="modal hidden">
+    <div class="modal-content">
+      <span id="modalClose" class="close">&times;</span>
+      <h2 id="modalTitle">Create Service</h2>
+      <form id="serviceForm">
+        <label>Name: <input name="name" required></label>
+        <label>Version: <input name="version" required></label>
+        <label>Description: <input name="description" required></label>
+        <label>Mode:
+          <select name="mode">
+            <option value="function">Function</option>
+            <option value="service">Service</option>
+          </select>
+        </label>
+        <label>Executable File: <input type="file" name="exec_file" id="execFile"></label>
+        <div class="buttons">
+          <button type="submit">Submit</button>
+          <button type="button" id="cancelEdit">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <h2>Test a Service</h2>
+  <div id="testBox">
+    <select id="testSelector" onchange="selectTestService()"></select>
     <div class="test-io">
       <textarea id="testInput" placeholder="Enter input..."></textarea>
-      <textarea id="testOutput" placeholder="Output..." readonly></textarea>
+      <textarea id="testOutput" readonly></textarea>
     </div>
-    <br />
-    <button id="startBtn" onclick="startSession()">Start</button>
-    <button id="sendBtn" onclick="sendInput()" disabled>Send</button>
-    <button id="endBtn" onclick="endSession()" disabled>End</button>
+    <div>
+      <button id="startBtn" onclick="startSession()">Start</button>
+      <button id="sendBtn" onclick="sendInput()" disabled>Send</button>
+      <button id="endBtn" onclick="endSession()" disabled>End</button>
+    </div>
   </div>
 
+  <script src="/static/table.js"></script>
+  <script src="/static/form.js"></script>
+  <script src="/static/test.js"></script>
   <script src="/static/script.js"></script>
 </body>
 </html>

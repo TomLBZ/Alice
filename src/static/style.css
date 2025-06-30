@@ -1,37 +1,92 @@
+/* static/style.css */
 body {
   font-family: sans-serif;
-  padding: 20px;
+  margin: 20px;
 }
-table {
+
+#tableContainer {
+  height: 50vh;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  margin-bottom: 10px;
+}
+
+#serviceTable {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 20px;
 }
-th, td {
-  border: 1px solid #ccc;
-  padding: 5px;
+
+#serviceTable th, #serviceTable td {
+  border: 1px solid #ddd;
+  padding: 8px;
   text-align: left;
 }
-textarea {
-  height: 120px;
-  padding: 10px;
+
+#serviceTable tr.active {
+  background-color: #e3f2fd;
 }
-input, select, button {
-  margin: 5px 0;
-  padding: 5px;
+
+button {
+  margin-top: 10px;
+  margin-right: 10px;
 }
-.form-vertical {
+
+#testBox {
+  height: 300px;
   display: flex;
   flex-direction: column;
-  max-width: 400px;
-}
-.test-io {
-  display: flex;
   gap: 10px;
 }
+
+.test-io {
+  display: flex;
+  height: 100%;
+}
+
 .test-io textarea {
   flex: 1;
-  height: 200px;
-  width: 100%;
-  resize: vertical;
+  resize: none;
+  height: 100%;
+}
+
+.modal {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-content {
+  background: white;
+  padding: 20px;
+  width: 400px;
+  border-radius: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.modal-content label {
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-content .buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.close {
+  position: absolute;
+  top: 20px;
+  right: 30px;
+  font-size: 24px;
+  cursor: pointer;
 }
