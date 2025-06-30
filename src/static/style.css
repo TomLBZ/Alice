@@ -1,14 +1,36 @@
 /* static/style.css */
 body {
-  font-family: sans-serif;
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #f4f6f8;
+  color: #333;
   margin: 20px;
+}
+
+h1, h2 {
+  color: #2c3e50;
+}
+
+button {
+  background-color: #3498db;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  margin: 5px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #2980b9;
 }
 
 #tableContainer {
   height: 50vh;
   overflow-y: auto;
   border: 1px solid #ccc;
-  margin-bottom: 10px;
+  background: white;
+  border-radius: 5px;
+  padding: 10px;
 }
 
 #serviceTable {
@@ -17,18 +39,32 @@ body {
 }
 
 #serviceTable th, #serviceTable td {
-  border: 1px solid #ddd;
+  border-bottom: 1px solid #ddd;
   padding: 8px;
   text-align: left;
 }
 
-#serviceTable tr.active {
-  background-color: #e3f2fd;
+#serviceTable tr:hover {
+  background-color: #eef7ff;
 }
 
-button {
-  margin-top: 10px;
-  margin-right: 10px;
+#serviceTable tr.active {
+  background-color: #d0ecff;
+}
+
+#serviceTable td a {
+  color: #2980b9;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+#serviceTable td a:hover {
+  text-decoration: underline;
+}
+
+#serviceTable td a::after {
+  content: \" \\1F4CB\"; /* 📋 clipboard icon */
+  margin-left: 5px;
 }
 
 #testBox {
@@ -36,17 +72,35 @@ button {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  background: #fff;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
 }
 
 .test-io {
   display: flex;
   height: 100%;
+  gap: 10px;
 }
 
 .test-io textarea {
   flex: 1;
   resize: none;
   height: 100%;
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  font-family: monospace;
+  font-size: 14px;
+}
+
+#testSelector {
+  padding: 6px;
+  border-radius: 4px;
+  border: 1px solid #bbb;
+  font-size: 14px;
+  margin-right: 10px;
 }
 
 .modal {
@@ -56,6 +110,7 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 1000;
 }
 
 .modal.hidden {
@@ -66,15 +121,17 @@ button {
   background: white;
   padding: 20px;
   width: 400px;
-  border-radius: 5px;
+  border-radius: 8px;
   display: flex;
   flex-direction: column;
   gap: 10px;
+  position: relative;
 }
 
 .modal-content label {
   display: flex;
   flex-direction: column;
+  font-size: 14px;
 }
 
 .modal-content .buttons {
@@ -85,8 +142,9 @@ button {
 
 .close {
   position: absolute;
-  top: 20px;
-  right: 30px;
+  top: 10px;
+  right: 16px;
   font-size: 24px;
   cursor: pointer;
+  color: #888;
 }

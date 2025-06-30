@@ -1,64 +1,77 @@
-<!-- static/index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Service Dashboard</title>
-  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="static/style.css" />
 </head>
 <body>
-  <h1>Registered Services</h1>
+  <h1>Service Dashboard</h1>
+
   <div id="tableContainer">
     <table id="serviceTable">
       <thead>
-        <tr><th>Name</th><th>Mode</th><th>Description</th><th>Sessions</th><th>Uptime</th><th>Actions</th></tr>
+        <tr>
+          <th>Name</th>
+          <th>Mode</th>
+          <th>Description</th>
+          <th>Sessions</th>
+          <th>Uptime</th>
+          <th>Actions</th>
+        </tr>
       </thead>
-      <tbody id="servicesBody"></tbody>
+      <tbody id="servicesBody">
+        <!-- Dynamically populated -->
+      </tbody>
     </table>
   </div>
 
   <button id="createBtn">+ Create New Service</button>
 
-  <div id="modal" class="modal hidden">
+  <!-- Modal -->
+  <div class="modal hidden" id="modal">
     <div class="modal-content">
-      <span id="modalClose" class="close">&times;</span>
-      <h2 id="modalTitle">Create Service</h2>
+      <span class="close" id="modalClose">&times;</span>
+      <h2 id="modalTitle">Create/Edit Service</h2>
       <form id="serviceForm">
-        <label>Name: <input name="name" required></label>
-        <label>Version: <input name="version" required></label>
-        <label>Description: <input name="description" required></label>
+        <label>Name: <input name="name" required /></label>
+        <label>Version: <input name="version" required /></label>
+        <label>Description: <input name="description" /></label>
         <label>Mode:
           <select name="mode">
             <option value="function">Function</option>
             <option value="service">Service</option>
           </select>
         </label>
-        <label>Executable File: <input type="file" name="exec_file" id="execFile"></label>
+        <label>Executable File: <input type="file" name="file" /></label>
         <div class="buttons">
-          <button type="submit">Submit</button>
+          <button type="submit">Update</button>
           <button type="button" id="cancelEdit">Cancel</button>
         </div>
       </form>
     </div>
   </div>
 
-  <h2>Test a Service</h2>
+  <h2>Test Service</h2>
   <div id="testBox">
-    <select id="testSelector" onchange="selectTestService()"></select>
+    <div>
+      <select id="testSelector" onchange="selectTestService()"></select>
+      <button onclick="startSession()" id="startBtn">Start Session</button>
+    </div>
     <div class="test-io">
-      <textarea id="testInput" placeholder="Enter input..."></textarea>
-      <textarea id="testOutput" readonly></textarea>
+      <textarea id="testInput" placeholder="Input..." disabled></textarea>
+      <textarea id="testOutput" placeholder="Output..." readonly></textarea>
     </div>
     <div>
-      <button id="startBtn" onclick="startSession()">Start</button>
-      <button id="sendBtn" onclick="sendInput()" disabled>Send</button>
-      <button id="endBtn" onclick="endSession()" disabled>End</button>
+      <button onclick="sendInput()" id="sendBtn" disabled>Send</button>
+      <button onclick="endSession()" id="endBtn" disabled>End Session</button>
     </div>
   </div>
 
-  <script src="/static/table.js"></script>
-  <script src="/static/form.js"></script>
-  <script src="/static/test.js"></script>
-  <script src="/static/script.js"></script>
+  <!-- Scripts -->
+  <script src="static/script.js"></script>
+  <script src="static/form.js"></script>
+  <script src="static/table.js"></script>
+  <script src="static/test.js"></script>
 </body>
 </html>

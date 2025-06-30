@@ -16,8 +16,8 @@ function showForm(mode, data = {}) {
     form.description.value = data.description;
     form.mode.value = data.mode;
     editingService = data;
-    form.name.disabled = true;
-    form.version.disabled = true;
+    form.name.disabled = false;
+    form.version.disabled = false;
   } else {
     editingService = null;
     form.name.disabled = false;

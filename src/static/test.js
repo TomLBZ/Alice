@@ -14,7 +14,10 @@ function startSession() {
   ws = new WebSocket(`${location.origin.replace("http", "ws")}/ws/serve/${name}/${version}`);
 
   const output = document.getElementById("testOutput");
+  const inputBox = document.getElementById("testInput");
   output.value = "";
+  inputBox.value = "";
+  inputBox.disabled = true;
 
   ws.onmessage = (e) => {
     output.value += e.data + "\n";
@@ -25,6 +28,7 @@ function startSession() {
     document.getElementById("startBtn").disabled = true;
     document.getElementById("sendBtn").disabled = false;
     document.getElementById("endBtn").disabled = false;
+    inputBox.disabled = false;
   };
 
   ws.onclose = () => {
@@ -32,6 +36,7 @@ function startSession() {
     document.getElementById("startBtn").disabled = false;
     document.getElementById("sendBtn").disabled = true;
     document.getElementById("endBtn").disabled = true;
+    inputBox.disabled = true;
   };
 }
 
