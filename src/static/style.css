@@ -19,7 +19,7 @@ button {
   margin: 5px;
   border-radius: 4px;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.3s ease;
 }
 
 button:hover {
@@ -109,6 +109,11 @@ button:disabled {
   border-radius: 4px;
   border: 1px solid #bbb;
   font-size: 14px;
+  transition: opacity 0.3s ease;
+}
+#testSelector:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* Fix bottom button overlap */
