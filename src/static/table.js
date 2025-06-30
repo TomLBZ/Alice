@@ -5,22 +5,31 @@ function buildServiceRow(svc, id) {
     const tr = document.createElement("tr");
     if (id === currentSelected) tr.classList.add("active");
 
-    // Service name (copyable link)
+    // Name cell with copy icon
     const nameTd = document.createElement("td");
-    const link = document.createElement("a");
-    link.href = "#";
-    link.textContent = svc.name;
-    link.title = "Click to copy WebSocket URL";
-    link.onclick = (e) => {
-        e.preventDefault();
+
+    const nameSpan = document.createElement("span");
+    nameSpan.textContent = svc.name;
+    nameSpan.style.marginRight = "8px";
+
+    const copyIcon = document.createElement("span");
+    copyIcon.textContent = "📋";
+    copyIcon.style.cursor = "pointer";
+    copyIcon.title = "Copy WebSocket URL";
+    copyIcon.onclick = (e) => {
+        e.stopPropagation();
         const wsUrl = `${location.origin.replace("http", "ws")}/ws/serve/${svc.name}/${svc.version}`;
         navigator.clipboard.writeText(wsUrl).then(() => {
-            const originalTitle = link.title;
-            link.title = "Copied!";
-            setTimeout(() => (link.title = originalTitle), 1000);
+        const original = copyIcon.textContent;
+        copyIcon.textContent = "✅";
+        setTimeout(() => {
+            copyIcon.textContent = original;
+        }, 1000);
         });
     };
-    nameTd.appendChild(link);
+
+    nameTd.appendChild(nameSpan);
+    nameTd.appendChild(copyIcon);
     tr.appendChild(nameTd);
 
     // Mode

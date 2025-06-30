@@ -1,4 +1,4 @@
-/* static/style.css */
+/* General Styles */
 body {
   font-family: 'Segoe UI', sans-serif;
   background-color: #f4f6f8;
@@ -10,6 +10,7 @@ h1, h2 {
   color: #2c3e50;
 }
 
+/* Button Styles */
 button {
   background-color: #3498db;
   color: white;
@@ -18,12 +19,20 @@ button {
   margin: 5px;
   border-radius: 4px;
   cursor: pointer;
+  transition: background-color 0.2s ease;
 }
 
 button:hover {
   background-color: #2980b9;
 }
 
+button:disabled {
+  background-color: #c0cbd3;
+  color: #f0f0f0;
+  cursor: not-allowed;
+}
+
+/* Table Styles */
 #tableContainer {
   height: 50vh;
   overflow-y: auto;
@@ -52,25 +61,16 @@ button:hover {
   background-color: #d0ecff;
 }
 
-#serviceTable td a {
-  color: #2980b9;
-  text-decoration: none;
-  cursor: pointer;
+#serviceTable td span {
+  font-size: 14px;
+  vertical-align: middle;;
 }
 
-#serviceTable td a:hover {
-  text-decoration: underline;
-}
-
-#serviceTable td a::after {
-  content: \" \\1F4CB\"; /* 📋 clipboard icon */
-  margin-left: 5px;
-}
-
+/* Test Box */
 #testBox {
-  height: 300px;
   display: flex;
   flex-direction: column;
+  height: 300px;
   gap: 10px;
   background: #fff;
   padding: 10px;
@@ -78,21 +78,30 @@ button:hover {
   border: 1px solid #ccc;
 }
 
-.test-io {
+#testBox > div:first-child {
   display: flex;
-  height: 100%;
+  align-items: center;
+}
+
+#startBtn {
+  margin-left: 10px;
+}
+
+.test-io {
+  flex: 1;
+  display: flex;
   gap: 10px;
 }
 
 .test-io textarea {
   flex: 1;
   resize: none;
-  height: 100%;
   padding: 8px;
   border-radius: 4px;
   border: 1px solid #ccc;
   font-family: monospace;
   font-size: 14px;
+  height: 100%;
 }
 
 #testSelector {
@@ -100,9 +109,16 @@ button:hover {
   border-radius: 4px;
   border: 1px solid #bbb;
   font-size: 14px;
-  margin-right: 10px;
 }
 
+/* Fix bottom button overlap */
+#testBox > div:last-child {
+  display: flex;
+  justify-content: flex-start;
+  padding: 10px 0 0 0;
+}
+
+/* Modal Styles */
 .modal {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
@@ -111,10 +127,15 @@ button:hover {
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
 .modal.hidden {
-  display: none;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .modal-content {
