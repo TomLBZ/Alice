@@ -1,6 +1,7 @@
 let ws = null;
 let currentServiceId = "";
 let currentMode = "function";
+let sessionActive = false;
 
 function refreshServices() {
   fetch("/services")
@@ -11,9 +12,10 @@ function refreshServices() {
       tbody.innerHTML = "";
       selector.innerHTML = "<option value=''>Select service...</option>";
       Object.entries(data).forEach(([id, svc]) => {
+        const wsUrl = `ws://${location.host}/ws/serve/${svc.name}/${svc.version}`;
         const row = document.createElement("tr");
         row.innerHTML = `
-          <td>${id}</td>
+          <td><a href="#" onclick="navigator.clipboard.writeText('${wsUrl}');return false;" title="Copy WebSocket URL">${id}</a></td>
           <td>${svc.mode || "function"}</td>
           <td>${svc.description}</td>
           <td>${svc.sessions}</td>
@@ -81,14 +83,15 @@ function selectTestService() {
   currentServiceId = selected;
   const selectedOption = selector.selectedOptions[0];
   currentMode = selectedOption.dataset.mode || "function";
-  document.getElementById("testOutput").value = "";  // Clear output on new select
+  document.getElementById("testOutput").value = "";
+  document.getElementById("selectedServiceName").textContent = selected;
+  updateButtonStates();
 }
 
 function startSession() {
   if (ws) ws.close();
   const [name, version] = currentServiceId.split(":");
   ws = new WebSocket(`ws://${location.host}/ws/serve/${name}/${version}`);
-
   ws.onmessage = (e) => {
     const box = document.getElementById("testOutput");
     if (currentMode === "function") {
@@ -98,13 +101,21 @@ function startSession() {
       box.scrollTop = box.scrollHeight;
     }
   };
+  ws.onopen = () => {
+    sessionActive = true;
+    updateButtonStates();
+  };
+  ws.onclose = () => {
+    sessionActive = false;
+    updateButtonStates();
+  };
 }
 
 function sendInput() {
   const input = document.getElementById("testInput").value;
   if (ws && ws.readyState === WebSocket.OPEN) {
     if (currentMode === "function") {
-      document.getElementById("testOutput").value = "";  // clear before each call
+      document.getElementById("testOutput").value = "";
     }
     ws.send(input);
   }
@@ -113,6 +124,12 @@ function sendInput() {
 function endSession() {
   if (ws) ws.close();
   ws = null;
+}
+
+function updateButtonStates() {
+  document.getElementById("startBtn").disabled = sessionActive;
+  document.getElementById("sendBtn").disabled = !sessionActive;
+  document.getElementById("endBtn").disabled = !sessionActive;
 }
 
 refreshServices();

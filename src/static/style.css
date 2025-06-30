@@ -13,9 +13,25 @@ th, td {
   text-align: left;
 }
 textarea {
-  width: 48%;
-  height: 100px;
+  height: 120px;
+  padding: 10px;
 }
 input, select, button {
-  margin: 5px;
+  margin: 5px 0;
+  padding: 5px;
+}
+.form-vertical {
+  display: flex;
+  flex-direction: column;
+  max-width: 400px;
+}
+.test-io {
+  display: flex;
+  gap: 10px;
+}
+.test-io textarea {
+  flex: 1;
+  height: 200px;
+  width: 100%;
+  resize: vertical;
 }

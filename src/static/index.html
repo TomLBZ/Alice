@@ -23,7 +23,7 @@
 
   <div id="editSection" style="display:none;">
     <h2>Edit Service</h2>
-    <form id="editForm">
+    <form id="editForm" class="form-vertical">
       <input name="name" type="hidden" />
       <input name="version" type="hidden" />
       <label>Description:</label>
@@ -44,15 +44,19 @@
   </div>
 
   <h2>Create New Service</h2>
-  <form id="createForm">
-    <input name="name" placeholder="Name" required />
-    <input name="version" placeholder="Version" required />
-    <input name="description" placeholder="Description" required />
+  <form id="createForm" class="form-vertical">
+    <label>Name:</label>
+    <input name="name" required />
+    <label>Version:</label>
+    <input name="version" required />
+    <label>Description:</label>
+    <input name="description" required />
     <label>Mode:</label>
     <select name="mode" required>
       <option value="function">Function</option>
       <option value="service">Service</option>
     </select>
+    <label>Executable:</label>
     <input name="exec_file" type="file" required />
     <button type="submit">Create</button>
   </form>
@@ -62,12 +66,15 @@
     <option value="">Select service...</option>
   </select>
   <div id="testBox" style="display:none;">
-    <textarea id="testInput" placeholder="Enter input..."></textarea>
-    <textarea id="testOutput" placeholder="Output..." readonly></textarea>
+    <h4>Selected: <span id="selectedServiceName"></span></h4>
+    <div class="test-io">
+      <textarea id="testInput" placeholder="Enter input..."></textarea>
+      <textarea id="testOutput" placeholder="Output..." readonly></textarea>
+    </div>
     <br />
-    <button onclick="startSession()">Start</button>
-    <button onclick="sendInput()">Send</button>
-    <button onclick="endSession()">End</button>
+    <button id="startBtn" onclick="startSession()">Start</button>
+    <button id="sendBtn" onclick="sendInput()" disabled>Send</button>
+    <button id="endBtn" onclick="endSession()" disabled>End</button>
   </div>
 
   <script src="/static/script.js"></script>
