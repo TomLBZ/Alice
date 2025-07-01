@@ -16,16 +16,14 @@ def run_code(code: str) -> Tuple[str, str]:
         error = "ERROR:\n" + traceback.format_exc()
     return result, error
 
-def multiline_input(prompt: str) -> str:
-    print(prompt, end="")
+def multiline_input(prompt: str, verbose = False) -> str:
+    if verbose:
+        print(prompt, end="")
     lines = []
-    eotChar = "\x04"  # ASCII End of Transmission (EOT)
     while True:
         try:
             line = input()
-            # test if the line IS the end of transmission character
-            if line == eotChar:
-                print("End of input received.")
+            if line == "\x04":  # ASCII End of Transmission (EOT)
                 break
             lines.append(line)
         except EOFError:
@@ -37,7 +35,7 @@ def multiline_input(prompt: str) -> str:
 if __name__ == "__main__":
     while True:
         try:
-            input_string = multiline_input("Enter code (end with a blank line):\n")
+            input_string = multiline_input("Enter code (end with EOT 0x04):\n", False)
             output, error = run_code(input_string)
             if error:
                 print(error)
