@@ -18,7 +18,7 @@ def run_code(code: str) -> Tuple[str, str]:
 
 def multiline_input(prompt: str, verbose = False) -> str:
     if verbose:
-        print(prompt, end="")
+        print(prompt)
     lines = []
     while True:
         try:
@@ -35,7 +35,7 @@ def multiline_input(prompt: str, verbose = False) -> str:
 if __name__ == "__main__":
     while True:
         try:
-            input_string = multiline_input("Enter code (end with EOT 0x04):\n", False)
+            input_string = multiline_input("Enter code (end with EOT 0x04):", False)
             output, error = run_code(input_string)
             if error:
                 print(error)
