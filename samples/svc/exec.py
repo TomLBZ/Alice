@@ -19,17 +19,19 @@ def run_code(code: str) -> Tuple[str, str]:
 def multiline_input(prompt: str) -> str:
     print(prompt, end="")
     lines = []
+    eotChar = "\x04"  # ASCII End of Transmission (EOT)
     while True:
         try:
             line = input()
-            if line.strip() == "":
+            # test if the line IS the end of transmission character
+            if line == eotChar:
+                print("End of input received.")
                 break
             lines.append(line)
         except EOFError:
             break
         except KeyboardInterrupt:
-            print("\nExiting multiline input.")
-            break
+            raise
     return "\n".join(lines)
 
 if __name__ == "__main__":

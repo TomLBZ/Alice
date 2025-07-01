@@ -48,8 +48,10 @@ function startSession() {
 }
 
 function sendInput() {
-    const input = document.getElementById("testInput").value;
-    if (ws) ws.send(input);
+    const input_raw = document.getElementById("testInput").value;
+    const input = input_raw.endsWith("\n") ? input_raw : input_raw + "\n";
+    const eofChar = String.fromCharCode(0x04); // ASCII End of Transmission (EOT)
+    if (ws) ws.send(input + eofChar);
 }
 
 function endSession() {
