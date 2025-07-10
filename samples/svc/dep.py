@@ -35,7 +35,7 @@ if __name__ == "__main__":
                 print("No dependencies provided.")
                 continue
             for input_string in inputs:
-                if not input_string:
+                if not input_string or input_string == "\x04":  # ASCII End of Transmission (EOT)
                     continue
                 else:
                     pip_install(input_string)
