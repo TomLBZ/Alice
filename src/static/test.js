@@ -13,12 +13,16 @@ function startSession() {
     const id = document.getElementById("testSelector").value;
     const [name, version] = id.split(":");
     ws = new WebSocket(`${location.origin.replace("http", "ws")}/ws/serve/${name}/${version}`);
-
     const output = document.getElementById("testOutput");
     const inputBox = document.getElementById("testInput");
     output.value = "";
     inputBox.value = "";
     inputBox.disabled = true;
+    ws.onerror = (e) => {
+        console.error("WebSocket error:", e);
+        alert("Failed to connect to the service. Please try again.");
+        ws = null;
+    };
 
     ws.onmessage = (e) => {
         output.value += e.data;
