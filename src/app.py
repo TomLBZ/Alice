@@ -202,4 +202,4 @@ async def handle_service_mode(websocket, exec_path):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True, reload_excludes=["__pycache__", "venv", "*.pyc", "*.pyo", "*.pyd"])
+    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True, reload_excludes=["__pycache__", "venv", "tmp", "*.pyc", "*.pyo", "*.pyd"])
